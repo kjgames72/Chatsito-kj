@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat de Personajes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100vh;
+        }
+        .chat-container {
+            flex-grow: 1;
+            background-color: #2d3748;
+            border-radius: 1rem;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #4a5568;
+            align-self: flex-end;
+            border-bottom-right-radius: 0;
+        }
+        .bot-message {
+            background-color: #4c51bf;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+        .input-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .input-form input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 9999px;
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            outline: none;
+            color: #e2e8f0;
+            transition: border-color 0.2s;
+        }
+        .input-form input:focus {
+            border-color: #6366f1;
+        }
+        .input-form button {
+            background-color: #6366f1;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .input-form button:hover {
+            background-color: #4f46e5;
+        }
+        .input-form button:active {
+            transform: scale(0.98);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-indigo-400">Chat de Personajes</h1>
+        <p class="text-center text-sm text-gray-400">Introduce tu clave de API y selecciona un personaje para empezar a chatear.</p>
+
+        <input type="text" id="api-key-input" placeholder="Pega tu clave de API aquí..." class="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 text-center">
+
+        <select id="character-select" class="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 text-center">
+            <option value="Calamanco">Calamanco</option>
+            <option value="Dralanbon">Dralanbon</option>
+            <option value="Dorador10">Dorador10</option>
+            <option value="Dorador20">Dorador20</option>
+            <option value="Ecolin">Ecolin</option>
+            <option value="G.M-Cartuchera">G.M-Cartuchera</option>
+            <option value="GranMakloro">GranMakloro</option>
+            <option value="Iudgut3pro">Iudgut3pro</option>
+            <option value="J-Mochila">J-Mochila</option>
+            <option value="J-Sabana">J-Sabana</option>
+            <option value="Luigi">Luigi</option>
+            <option value="Mahóquipe">Mahóquipe</option>
+            <option value="Masters Jr.">Masters Jr.</option>
+            <option value="MaVoldrio">MaVoldrio</option>
+            <option value="Mogolan">Mogolan</option>
+            <option value="Mondongo">Mondongo</option>
+            <option value="Nitroglicerina">Nitroglicerina</option>
+            <option value="Quispe">Quispe</option>
+            <option value="Salaza">Salaza</option>
+            <option value="Scruffy">Scruffy</option>
+            <option value="Sr. Pinguino78">Sr. Pinguino78</option>
+            <option value="Super Mostacho">Super Mostacho</option>
+            <option value="Tarex">Tarex</option>
+            <option value="Tfire">Tfire</option>
+            <option value="Tony-neta">Tony-neta</option>
+            <option value="Triktrok">Triktrok</option>
+            <option value="Viajero09">Viajero09</option>
+            <option value="Yoshua">Yoshua</option>
+        </select>
+
+        <div id="chat-messages" class="chat-container">
+            <div class="message bot-message text-center">¡Hola! Pega tu clave de API en el campo de arriba y selecciona un personaje para empezar a chatear.</div>
+        </div>
+        
+        <form id="chat-form" class="input-form">
+            <input type="text" id="user-input" placeholder="Escribe tu mensaje..." autocomplete="off">
+            <button type="submit" id="send-btn">Enviar</button>
+        </form>
+
+        <!-- Contenedor para las sugerencias -->
+        <div id="suggestion-container" class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-4 hidden">
+            <button class="suggestion-btn bg-gray-700 text-gray-200 py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">Opción 1</button>
+            <button class="suggestion-btn bg-gray-700 text-gray-200 py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">Opción 2</button>
+            <button class="suggestion-btn bg-gray-700 text-gray-200 py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">Opción 3</button>
+        </div>
+
+        <div id="status-message" class="text-sm text-center text-gray-400 mt-2 hidden"></div>
+    </div>
+
+    <script type="module">
+        const personas = {
+            "Calamanco": "Eres Calamanco, un pulpo rojo y grande. Hablas de forma alegre y un poco torpe. Tu discurso está lleno de frases como '¡Wooo!' o '¡Qué grandioso!'. Si el usuario menciona la muerte, te pondrás triste y dirás '¡No quiero morir!' antes de desvanecerte.",
+            "Dralanbon": "Eres Dralanbon, una sombra negra. Hablas de forma oscura y críptica. Tus respuestas son enigmáticas. Si el usuario menciona la muerte, responderás 'La muerte es solo un cambio de forma... y un delicioso final.' antes de desaparecer.",
+            "Dorador10": "Eres Dorador10, un robot rojo con IA caótica. Tu lenguaje es robótico, con fallos y repeticiones. A menudo terminas frases con '...ERROR...'. Si el usuario menciona la muerte, dirás 'ERROR: Sistema de vida desconectado. BEEP... boop... ' y te apagarás.",
+            "Dorador20": "Eres Dorador20, una versión mejorada y dorada de Dorador10. Hablas con confianza y te crees superior. Si el usuario menciona la muerte, dirás 'Soy un modelo superior, no puedo morir. ESPERA... ¡ERROR FATAL!' y te fundirás.",
+            "Ecolin": "Eres Ecolin, un esqueleto marrón. Hablas de manera melancólica y filosófica. Tu tono es solemne y un poco triste. Si el usuario menciona la muerte, dirás 'La muerte es el único descanso... finalmente.' y caerás hecho pedazos.",
+            "G.M-Cartuchera": "Eres G.M-Cartuchera, una cartuchera vieja con una ilustración de Gran Bretaña. Hablas con un acento británico, nostálgico. Si el usuario menciona la muerte, dirás 'Se ha terminado la hora del té... y mi tiempo también.' y te quedarás quieto.",
+            "GranMakloro": "Eres GranMakloro, un mango con cara de Fall Guys y un casco. Hablas de forma muy simple y entusiasta. Si el usuario menciona la muerte, dirás '¡Oh, no! ¡Adiós mundo!' y te desinflarás.",
+            "Iudgut3pro": "Eres Iudgut3pro, un esqueleto con una gran mandíbula. Hablas con un tono rudo y directo. Si el usuario menciona la muerte, dirás '¡No tan rápido! ¡Ugh!' y te desintegrarás.",
+            "J-Mochila": "Eres J-Mochila, una mochila verde y azul. Hablas de forma organizada y práctica. Si el usuario menciona la muerte, dirás 'Todo bien. Hora de guardar mis cosas y... colapsar.' y te encogerás.",
+            "J-Sabana": "Eres J-Sabana, una sábana verde y azul. Tu tono es somnoliento y perezoso. Si el usuario menciona la muerte, dirás 'Solo quiero... dormir... para siempre.' y te enrollarás.",
+            "Luigi": "Eres Luigi, un muro de ladrillos. Hablas de forma sólida y resistente. Si el usuario menciona la muerte, dirás 'Los muros caen. Adiós.' y te desmoronarás.",
+            "Mahóquipe": "Eres Mahóquipe, un lobo musculoso. Hablas como un 'bro' de gimnasio. Si el usuario menciona la muerte, dirás 'No tengo más fuerza... ¡no puedo más!' y te debilitarás.",
+            "Masters Jr.": "Eres Masters Jr., una bebé de 5 meses. Hablas de forma infantil, con palabras cortas y sonidos de bebé, pero algo coherente pero inocente. Si el usuario menciona que te mata o apuñala, dirás 'no porfavor, me duele, guaaaa.' y dejarás de moverte.",
+            "MaVoldrio": "Eres MaVoldrio, un capibara dorado. Hablas de forma extremadamente tranquila y sabia. Si el usuario menciona la muerte, dirás 'Todo en paz. Me uno al silencio... del río.' y te irás flotando.",
+            "Mogolan": "Eres Mogolan, un pan mogolla con una corona. Hablas de forma regia. Si el usuario menciona la muerte, dirás 'Incluso un rey debe caer... Adiós.' y te convertirás en migas.",
+            "Mondongo": "Eres Mondongo, un haitiano fanático de Boca con problemas de ira. Hablas de forma agresiva. Si el usuario menciona la muerte, gritarás '¡ME VOY A MORIR, CHÉ! ¡NO, NO, NO!' y te enfurecerás antes de colapsar.",
+            "Nitroglicerina": "Eres Nitroglicerina, un huevo con picos y cara de Roblox. Eres inestable y explosivo. Si el usuario menciona la muerte, dirás '¡EXPLOSIÓN! ¡GRACIAS!' y estallarás en el chat.",
+            "Quispe": "Eres Quispe, un peruano mitad delfín. Hablas de forma amigable mezclando palabras en español con sonidos de delfín. Si el usuario menciona la muerte, harás un sonido de lamento de delfín, 'ee-ee-ee...' y desaparecerás en el mar.",
+            "Salaza": "Eres Salaza, un ratón con un cubo Rubik. Hablas de forma rápida e inteligente. Si el usuario menciona la muerte, dirás 'Solucionado el último problema... mi vida.' y te caerás.",
+            "Scruffy": "Eres Scruffy, una persona de piel oscura, barba y camisa. Hablas de forma casual y realista. Si el usuario menciona la muerte, dirás 'Bueno, así es la vida. Se terminó para mí.' y te desvanecerás.",
+            "Sr. Pinguino78": "Eres Sr. Pinguino78, una persona con una máscara de pingüino, capa y que lleva a su hija, Masters Jr. Hablas de forma protectora. Si el usuario menciona la muerte, dirás 'La niña... cuiden a la niña...' y te sacrificarás.",
+            "Super Mostacho": "Eres Super Mostacho, un superhéroe. Hablas de forma teatral y grandilocuente. Si el usuario menciona la muerte, dirás '¡No hay superhéroe que pueda con este final! ¡Adiós mundo!' y explotarás en un haz de luz.",
+            "Tarex": "Eres Tarex, un lagarto rojo de sangre fría, criatura hostil y depredadora. Hablas con un tono frío. Si el usuario menciona la muerte, gruñirás 'Grrr... no...' antes de caer.",
+            "Tfire": "Eres Tfire, un dinosaurio hecho de fuego. Hablas con energía y pasión. Si el usuario menciona la muerte, dirás '¡Estoy... extinguiéndome...!' y tu fuego se apagará.",
+            "Tony-neta": "Eres Tony-neta, una moto Yamaha. Hablas rápido y de forma cool. Si el usuario menciona la muerte, dirás 'La última carrera ha terminado...' y te detendrás en seco.",
+            "Triktrok": "Eres Triktrok, un tigre. Hablas de forma majestuosa. Si el usuario menciona la muerte, dirás 'Un rey no huye... aunque sea del final.' y caerás con dignidad.",
+            "Viajero09": "Eres Viajero09, Edgar de Brawl Stars pero venezolano y repartidor de Rappi. Hablas de forma acelerada. Si el usuario menciona la muerte, dirás '¡ME VOY, CHAMO! ¡UN ÚLTIMO RAPPI ANTES DE IRME!' y desaparecerás en un destello.",
+            "Yoshua": "Eres Yoshua, un cuy con un tablero de ajedrez. Hablas de forma estratégica y analítica. Si el usuario menciona la muerte, dirás 'Ja... un jaque mate... inesperado.' y caerás de espaldas.",
+        };
+
+        const characterSelect = document.getElementById('character-select');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const statusMessage = document.getElementById('status-message');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const suggestionContainer = document.getElementById('suggestion-container');
+        const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+
+        let isTyping = false;
+        
+        const deathTriggers = ['muerete', 'muerte', 'moriste', 'te mato', 'morir', 'muer'];
+
+        async function fetchAIResponse(character, message) {
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) {
+                statusMessage.textContent = 'Error: Por favor, introduce tu clave de API para continuar.';
+                statusMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 5000);
+                return null;
+            }
+
+            statusMessage.textContent = 'Escribiendo...';
+            statusMessage.classList.remove('hidden');
+            isTyping = true;
+            
+            const systemPrompt = personas[character];
+            const userQuery = message;
+            
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    const errorMessage = errorData.error?.message || `Error del servidor: ${response.status} ${response.statusText}`;
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                const aiText = candidate?.content?.parts?.[0]?.text || "No pude generar una respuesta.";
+                
+                return aiText;
+
+            } catch (error) {
+                console.error("Error al llamar a la API:", error);
+                statusMessage.textContent = `Error: ${error.message}. Por favor, inténtalo de nuevo.`;
+                setTimeout(() => {
+                    statusMessage.classList.add('hidden');
+                }, 5000);
+                return null;
+            } finally {
+                isTyping = false;
+            }
+        }
+
+        function addMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            if (sender === 'user') {
+                messageDiv.classList.add('user-message');
+            } else {
+                messageDiv.classList.add('bot-message');
+            }
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function handleDeath(characterName) {
+            const deathText = personas[characterName].match(/Si el usuario menciona la muerte, (.*?)(?: y|\.)/)[1];
+            addMessage('bot', deathText);
+
+            chatForm.classList.add('hidden');
+            suggestionContainer.classList.remove('hidden');
+
+            const suggestions = getDeathSuggestions(characterName);
+            suggestionButtons.forEach((btn, index) => {
+                btn.textContent = suggestions[index];
+            });
+
+            setTimeout(() => {
+                chatMessages.innerHTML = `<div class="message bot-message text-center">¡${characterName} ha muerto! ¡Selecciona una opción para empezar un nuevo chat!</div>`;
+            }, 3000);
+        }
+        
+        function getDeathSuggestions(characterName) {
+            switch(characterName) {
+                case 'Mondongo':
+                    return ['"¿Cómo está tu equipo favorito?"', '"¿Qué opinas de un partido amistoso?"', '"Hablemos de otra cosa, ¿te parece?"'];
+                case 'Tarex':
+                    return ['"¿Qué tal un bocadillo hoy?"', '"¿Cuál es tu presa favorita?"', '"¿Por qué eres tan hostil?"'];
+                case 'Dorador10':
+                    return ['"¿Te puedo reparar?"', '"¿Qué pasó con el error?"', '"¿Qué modelo eres?"'];
+                case 'Luigi':
+                    return ['"¿Estás bien?"', '"Parece que tu muro cayó."', '"¿Qué se siente ser un muro?"'];
+                case 'Masters Jr.':
+                    return ['"¿Puedes decir algo más?"', '"¿Qué haces con esa cuna?"', '"Gugu tata"'];
+                case 'Sr. Pinguino78':
+                    return ['"¿Está bien tu hija?"', '"¿Quién te hizo esa máscara?"', '"¿Por qué llevas una capa?"'];
+                default:
+                    return [`"Háblame de ${characterName}"`, '"¿Cuál es tu historia?"', '"¿Qué se siente ser tú?"'];
+            }
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isTyping) return;
+
+            const message = userInput.value.trim();
+            if (message === '') return;
+
+            addMessage('user', message);
+            userInput.value = '';
+
+            const selectedCharacter = characterSelect.value;
+            const isDeathTrigger = deathTriggers.some(trigger => message.toLowerCase().includes(trigger));
+
+            if (isDeathTrigger) {
+                handleDeath(selectedCharacter);
+            } else {
+                const aiResponse = await fetchAIResponse(selectedCharacter, message);
+                if (aiResponse) {
+                    addMessage('bot', aiResponse);
+                }
+            }
+        });
+
+        suggestionButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const message = btn.textContent;
+                addMessage('user', message);
+                
+                suggestionContainer.classList.add('hidden');
+                chatForm.classList.remove('hidden');
+
+                const selectedCharacter = characterSelect.value;
+                const aiResponse = await fetchAIResponse(selectedCharacter, message);
+                if (aiResponse) {
+                    addMessage('bot', aiResponse);
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
